@@ -17,7 +17,7 @@ current_line = 0
 lines_per_page = 24  # Adjust the number of lines per page as needed
 url_history = []
 current_history_index = -1  # -1 indicates no history yet
-
+current_url = ""
 
 search_mode = False
 search_term = ""
@@ -76,6 +76,7 @@ def add_to_history(url):
     url_history.append(url)
 
 def fetch_page(url):
+    global current_url
     try:
         req = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         response = urllib2.urlopen(req)
@@ -84,6 +85,7 @@ def fetch_page(url):
         if 'text/html' in content_type:
             # html_content = response.read()
             html_content = response.read().decode('utf-8', 'ignore').encode('cp437', 'replace')
+            current_url = url
             return html_content
         else:
             return "Content type is not text/html. Actual type: " + content_type
@@ -185,11 +187,11 @@ def display_page():
             bbs.writeln(content_buffer[current_line + i].encode('cp437', 'replace'))
         else:
             break
-    display_header("URL")  # Re-display the header
+    display_header()  # Re-display the header
     
 def enter_url():
     url_buffer = ''
-    display_header("URL")  # Initial header display
+    display_header()  # Initial header display
     bbs.writeln('|[X11|[Y00|07|16_')
     while True:
         key, extended = bbs.getkey()
@@ -201,7 +203,7 @@ def enter_url():
             return None
         elif key == '\x08':  # Backspace key
             bbs.write('|07|16|CL')
-            display_header("URL")  # Initial header display
+            display_header()  # Initial header display
             url_buffer = url_buffer[:-1]
         elif ord(key) in range(32, 127):  # Printable ASCII characters
             url_buffer += key
@@ -209,15 +211,17 @@ def enter_url():
         # Overwrite the current line with the new URL
         bbs.write("|[X11|[Y00|02" + url_buffer)
 
-def display_header(url):
+def display_header():
+    global current_url
     bbs.write("|[X00|[Y00")
     bbs.showfile("themes/zeal/text/browser_header.ans", 0, False, False, False)
+    bbs.writeln("|[X11|[Y00|02"+current_url)
 
 def main():
     global current_line, lines_per_page, search_mode, search_term
     clear_screen()
     bbs.write('|[0')
-    display_header("URL")  # Initial header display
+    display_header()  # Initial header display
 
     links = []  # Initialize links list
     link_selection_mode = False
@@ -276,15 +280,15 @@ def main():
                         links = process_url(url)  # Process the new URL
                     link_input_buffer = ''  # Clear the buffer after processing
                 link_selection_mode = False  # Exit link selection mode
-                # display_header("URL")
+                # display_header()
             if key == '\x1b':  # Escape key to cancel link selection
                 link_input_buffer = ''
                 link_selection_mode = False
-                display_header("URL")
+                display_header()
             elif key.upper == KEY_Q: # to cancel link selection
                 link_input_buffer = ''
                 link_selection_mode = False
-                display_header("URL")
+                display_header()
             continue  # Skip the rest of the loop in link selection mode
 
         if key == '\x1b':  # Escape key
