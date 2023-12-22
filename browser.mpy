@@ -1,6 +1,8 @@
 import mystic_bbs as bbs
 import urllib2
 from bs4 import BeautifulSoup
+# from PIL import Image
+
 
 # Key constants
 KEY_U = 'U'
@@ -17,6 +19,23 @@ lines_per_page = 24  # Adjust the number of lines per page as needed
 url_history = []
 current_history_index = -1  # -1 indicates no history yet
 
+# def convert_image_to_ascii(image_path, output_width):
+#     # Open the image using Pillow
+#     img = Image.open(image_path)
+
+#     # Resize the image
+#     aspect_ratio = img.height / float(img.width)
+#     new_height = int(output_width * aspect_ratio)
+#     img = img.resize((output_width, new_height))
+
+#     # Convert the image to grayscale
+#     img = img.convert('L')
+
+#     # Convert the grayscale image to ASCII
+#     ascii_str = ascii_art(img)  # This function will depend on the package you're using
+#     return ascii_str
+
+
 def add_to_history(url):
     global url_history, current_history_index
     # Add new URL and update the current index
@@ -31,7 +50,8 @@ def fetch_page(url):
         content_type = response.headers.get('content-type')
 
         if 'text/html' in content_type:
-            html_content = response.read().decode('utf-8', 'ignore').encode('cp437', 'ignore')
+            # html_content = response.read()
+            html_content = response.read().decode('utf-8', 'ignore').encode('cp437', 'replace')
             return html_content
         else:
             return "Content type is not text/html. Actual type: " + content_type
@@ -95,12 +115,13 @@ def go_forward():
         current_history_index += 1
         return url_history[current_history_index]
     return None
+
 def process_url(url):
     global content_buffer, current_line
     bbs.writeln('|[0')
     bbs.writeln("Fetching URL: " + url)
     html_content = fetch_page(url)
-    bbs.writeln("Fetched content length: " + str(len(html_content)))
+    # bbs.writeln("Fetched content length: " + str(len(html_content)))
 
     if html_content:
         text_content, links = parse_html(html_content)
@@ -121,7 +142,7 @@ def display_page():
     # Display a portion of the content buffer
     for i in range(lines_per_page):
         if current_line + i < len(content_buffer):
-            bbs.writeln(content_buffer[current_line + i])
+            bbs.writeln(content_buffer[current_line + i].encode('cp437', 'replace'))
         else:
             break
     display_header("URL")  # Re-display the header
@@ -161,6 +182,7 @@ def main():
     links = []  # Initialize links list
     link_selection_mode = False
     link_input_buffer = ''  # Buffer to store multi-digit link inputs
+    display_help()
 
 
     while True:
